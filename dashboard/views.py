@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 
 from .forms import UserRegistrationForm, ProfileRegistrationForm
 from .forms import UserUpdateForm, ProfileUpdateForm
-from .models import Company
+from .models import Company, Profile
 
 
 def home(request):
@@ -19,11 +19,17 @@ def register(request):
 	if request.method == 'POST':
 		user_form = UserRegistrationForm(request.POST)
 		profile_form = ProfileRegistrationForm(request.POST, request.FILES)
-		if user_form.is_valid(): and profile_form.is_valid():
-			user_form.save()
-			profile_form.save()
+		if user_form.is_valid() and profile_form.is_valid():
+			auth_user = user_form.save()
+			profile = profile_form.save(commit=False)
+			Profile.objects.create(
+				user = auth_user,
+				name = profile.name,
+				image = profile.image,
+				company = profile.company
+			)
 			username = user_form.cleaned_data.get('username')
-			messages.sucess(request, f'Account for {username} has been successfully created!')
+			messages.success(request, f'Account for {username} has been successfully created!')
 			return redirect('dashboard-home')
 	else:
 		user_form = UserRegistrationForm()
@@ -43,8 +49,8 @@ def settings(request):
 		if user_form.is_valid() and profile_form.is_valid():
 			user_form.save()
 			profile_form.save()
-			messages.sucess(request, f'Your account has been updated!')
-			return redirect('settings')
+			messages.success(request, f'Your account has been updated!')
+			return redirect('dashboard-settings')
 	else:
 		user_form = UserUpdateForm(instance=request.user)
 		profile_form = ProfileUpdateForm(instance=request.user.profile)
